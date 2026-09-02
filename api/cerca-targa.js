@@ -2,11 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 
 // Inizializza il database Supabase usando le variabili d'ambiente di Vercel
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Usa la Service Role Key per scrivere nel DB in sicurezza dal backend
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-    // 1. Recupera la targa inviata dal frontend
     const { targa } = req.query;
 
     if (!targa) {
@@ -17,7 +16,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.RAPIDAPI_KEY; 
 
     try {
-        // 2. Interroga l'API di RapidAPI con l'endpoint corretto e il parametro della targa
+        // Configurazione corretta dell'URL e dei parametri richiesti da visura-targa-ita
         const apiResponse = await fetch(`https://rapidapi.com{targaPulita}&type=A`, {
             method: 'GET',
             headers: {
@@ -32,7 +31,7 @@ export default async function handler(req, res) {
 
         const data = await apiResponse.json();
 
-        // 3. Estrai i dettagli utili dall'API adattandoli ai campi restituiti da visura-targa-ita
+        // Mappatura dei campi corretti restituiti dall'API
         const datiAuto = {
             targa: targaPulita,
             marca: data.brand || data.marca || "Sconosciuta",
@@ -41,7 +40,7 @@ export default async function handler(req, res) {
             creato_il: new Date().toISOString()
         };
 
-        // 4. Salva automaticamente i dati nel database Supabase
+        // Salvataggio nel database Supabase
         const { error: dbError } = await supabase
             .from('collezione_auto')
             .upsert(datiAuto, { onConflict: 'targa' });
@@ -50,7 +49,6 @@ export default async function handler(req, res) {
             console.error("Errore salvataggio Database:", dbError);
         }
 
-        // 5. Rispondi al frontend con i dati puliti
         return res.status(200).json(datiAuto);
 
     } catch (error) {
