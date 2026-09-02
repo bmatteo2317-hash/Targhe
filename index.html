@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Collezione Auto</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; text-align: center; }
+        input { padding: 10px; font-size: 16px; text-transform: uppercase; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #risultato { margin-top: 20px; padding: 15px; border: 1px solid #ddd; display: none; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <h1>🚗 Collezione Auto</h1>
+    <p>Inserisci la targa per aggiungere l'auto alla tua collezione:</p>
+    
+    <input type="text" id="targaInput" placeholder="AA123BB" maxlength="7">
+    <button onclick="cercaVeicolo()">Cerca e Aggiungi</button>
+
+    <div id="risultato"></div>
+
+    <script>
+        async function cercaVeicolo() {
+            const targa = document.getElementById('targaInput').value.trim().toUpperCase();
+            const boxRisultato = document.getElementById('risultato');
+            
+            if (!targa) return alert("Inserisci una targa!");
+
+            boxRisultato.style.display = 'block';
+            boxRisultato.innerHTML = "🔍 Ricerca in corso...";
+
+            try {
+                // Chiamiamo la funzione serverless locale di Vercel invece dell'API esterna
+                const response = await fetch(`/api/cerca-targa?targa=${targa}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    boxRisultato.innerHTML = `
+                        <h3>✅ Auto Trovata e Aggiunta!</h3>
+                        <p><strong>Marca:</strong> ${data.marca || 'N/D'}</p>
+                        <p><strong>Modello:</strong> ${data.modello || 'N/D'}</p>
+                        <p><strong>Anno:</strong> ${data.anno || 'N/D'}</p>
+                    `;
+                } else {
+                    boxRisultato.innerHTML = `❌ Errore: ${data.errore}`;
+                }
+            } catch (error) {
+                boxRisultato.innerHTML = "❌ Errore di connessione al server.";
+            }
+        }
+    </script>
+</body>
+</html>
