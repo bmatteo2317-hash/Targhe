@@ -17,12 +17,12 @@ export default async function handler(req, res) {
     const apiKey = process.env.RAPIDAPI_KEY; 
 
     try {
-        // 2. Interroga l'API di RapidAPI per ottenere i dati tecnici
-        const apiResponse = await fetch(`https://rapidapi.com{targaPulita}`, {
+        // 2. Interroga l'API di RapidAPI con l'endpoint corretto e il parametro della targa
+        const apiResponse = await fetch(`https://rapidapi.com{targaPulita}&type=A`, {
             method: 'GET',
             headers: {
                 'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': '://rapidapi.com'
+                'X-RapidAPI-Host': 'visura-targa-ita.p.rapidapi.com'
             }
         });
 
@@ -32,24 +32,22 @@ export default async function handler(req, res) {
 
         const data = await apiResponse.json();
 
-        // 3. Estrai i dettagli utili dall'API
+        // 3. Estrai i dettagli utili dall'API adattandoli ai campi restituiti da visura-targa-ita
         const datiAuto = {
             targa: targaPulita,
-            marca: data.marca || "Sconosciuta",
-            modello: data.modello || "Sconosciuto",
-            anno: data.anno_immatricolazione || null,
+            marca: data.brand || data.marca || "Sconosciuta",
+            modello: data.model || data.modello || "Sconosciuto",
+            anno: data.registrationYear || data.anno_immatricolazione || null,
             creato_il: new Date().toISOString()
         };
 
         // 4. Salva automaticamente i dati nel database Supabase
-        // (Usa 'upsert' così se la targa esiste già aggiorna il record invece di dare errore)
         const { error: dbError } = await supabase
             .from('collezione_auto')
             .upsert(datiAuto, { onConflict: 'targa' });
 
         if (dbError) {
             console.error("Errore salvataggio Database:", dbError);
-            // Non blocchiamo l'utente se il DB fallisce, mostriamo comunque i dati dell'auto
         }
 
         // 5. Rispondi al frontend con i dati puliti
